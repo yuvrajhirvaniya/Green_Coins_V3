@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Missing Coin Transactions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2e7d32;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #2e7d32;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #1b5e20;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fix Missing Coin Transactions</h1>
+    
+    <div class="card">
+        <h2>Check for Missing Transactions</h2>
+        <p>This tool will check for approved recycling activities that don't have corresponding coin transactions.</p>
+        <button id="checkButton" class="button">Check for Missing Transactions</button>
+    </div>
+    
+    <div id="result" class="result">
+        <h3>Results</h3>
+        <div id="resultContent"></div>
+    </div>
+    
+    <div id="activitiesTable" style="display: none;">
+        <h3>Activities with Missing Transactions</h3>
+        <table id="activitiesTableContent">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Coins</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="activitiesTableBody">
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        document.getElementById('checkButton').addEventListener('click', checkMissingTransactions);
+        
+        function checkMissingTransactions() {
+            fetch('fix_coin_transaction.php')
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    const resultContent = document.getElementById('resultContent');
+                    resultDiv.style.display = 'block';
+                    
+                    if (data.message) {
+                        resultContent.innerHTML = `<p>${data.message}</p>`;
+                        
+                        if (data.activities && data.activities.length > 0) {
+                            const tableDiv = document.getElementById('activitiesTable');
+                            const tableBody = document.getElementById('activitiesTableBody');
+                            tableDiv.style.display = 'block';
+                            tableBody.innerHTML = '';
+                            
+                            data.activities.forEach(activity => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${activity.id}</td>
+                                    <td>${activity.username}</td>
+                                    <td>${activity.coins_earned}</td>
+                                    <td>${activity.created_at}</td>
+                                    <td><button class="button" onclick="fixTransaction(${activity.id})">Fix</button></td>
+                                `;
+                                tableBody.appendChild(row);
+                            });
+                        }
+                    } else {
+                        resultContent.innerHTML = '<p>No missing transactions found.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const resultDiv = document.getElementById('result');
+                    const resultContent = document.getElementById('resultContent');
+                    resultDiv.style.display = 'block';
+                    resultContent.innerHTML = `<p>Error: ${error.message}</p>`;
+                });
+        }
+        
+        function fixTransaction(activityId) {
+            fetch(`fix_coin_transaction.php?activity_id=${activityId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    const resultContent = document.getElementById('resultContent');
+                    resultDiv.style.display = 'block';
+                    
+                    if (data.success) {
+                        resultContent.innerHTML = `
+                            <p>Transaction fixed successfully!</p>
+                            <p>User ID: ${data.transaction.user_id}</p>
+                            <p>Amount: ${data.transaction.amount}</p>
+                            <p>Updated Balance: ${data.updated_balance}</p>
+                        `;
+                        
+                        // Remove the fixed activity from the table
+                        const row = document.querySelector(`tr td:first-child:contains(${activityId})`).parentNode;
+                        if (row) {
+                            row.remove();
+                        }
+                        
+                        // Check if there are any activities left
+                        const tableBody = document.getElementById('activitiesTableBody');
+                        if (tableBody.children.length === 0) {
+                            document.getElementById('activitiesTable').style.display = 'none';
+                        }
+                    } else {
+                        resultContent.innerHTML = `<p>Error: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const resultDiv = document.getElementById('result');
+                    const resultContent = document.getElementById('resultContent');
+                    resultDiv.style.display = 'block';
+                    resultContent.innerHTML = `<p>Error: ${error.message}</p>`;
+                });
+        }
+    </script>
+</body>
+</html>
