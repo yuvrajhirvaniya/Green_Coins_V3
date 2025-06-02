@@ -1,8 +1,8 @@
 class AppConstants {
   // API Base URL
   // static const String baseUrl = 'http://10.0.2.2:3030/api'; // For Android emulator (10.0.2.2 points to host machine's localhost)
-  // static const String baseUrl = 'http://localhost:3030/api'; // For iOS simulator or web
-  static const String baseUrl = 'http://192.168.17.157:3030/api'; // For physical device - using computer's IP address
+  static const String baseUrl = 'http://localhost:3030/api'; // For iOS simulator or web
+  // static const String baseUrl = 'http://192.168.17.157:3030/api'; // For physical device - using computer's IP address
 
   // API Endpoints
   static const String loginEndpoint = '/users/login';
